@@ -1,0 +1,6 @@
+boto3
+flask
+backoff
+requests
+gunicorn
+dnspython
