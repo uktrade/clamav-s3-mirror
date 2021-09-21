@@ -10,6 +10,10 @@ Run `cvd.py` to check and download the latest database versions. This should be 
 
 ## Environment variables
 
-S3_BUCKET: the name of the s3 bucket
-AWS_ACCESS_KEY_ID: aws iam credentials with get/put/put acl perms for the bucket
-AWS_SECRET_ACCESS_KEY: aws iam credentials with get/put/put acl perms for the bucket
+
+| Variable name | Required | Description |
+| ------------- | ------------- | ------------- |
+| `S3_BUCKET ` | Yes | S3 bucket name |
+| `AWS_ACCESS_KEY_ID` | Yes | aws iam credentials with get/put/put acl perms for the bucket |
+| `AWS_SECRET_ACCESS_KEY` | Yes | aws iam credentials with get/put/put acl perms for the bucket |
+
