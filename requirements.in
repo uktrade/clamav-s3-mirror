@@ -4,3 +4,4 @@ backoff
 requests
 gunicorn
 dnspython
+python-environ

@@ -1,19 +1,21 @@
-from dns.resolver import Resolver
 import io
 import json
 import logging
-import os
 import re
 import socket
 
+from dns.resolver import Resolver
+import environ
 import backoff
 import boto3
 import requests
 
+env = environ.Env()
+environ.Env.read_env()
 
-HOSTNAME = os.environ.get("HOSTNAME", socket.gethostname())
-MIRROR_BUCKET = os.environ["S3_BUCKET"]
-CVDUPDATE_NAMESERVER = os.environ.get("CVDUPDATE_NAMESERVER", "current.cvd.clamav.net")
+HOSTNAME = env("HOSTNAME", default=socket.gethostname())
+MIRROR_BUCKET = env("S3_BUCKET")
+CVDUPDATE_NAMESERVER = env("CVDUPDATE_NAMESERVER", default="current.cvd.clamav.net")
 
 USER_AGENT = f"CVDUPDATE/1.0 ({HOSTNAME})"
 
@@ -255,6 +257,8 @@ def update():
         else:
             print(f"{database} cdiffs are up to date")
 
+        continue
+
         # is the database up to date?
         if versions[database]["local"] < versions[database]["available"]:
 
@@ -269,3 +273,8 @@ def update():
             s3.upload_fileobj(fd, MIRROR_BUCKET, database, ExtraArgs={'ACL': 'public-read'})
         else:
             print(f"{database} is up to date")
+
+
+if __name__ == "__main__":
+    # if the file is run directly, download updates 
+    update()

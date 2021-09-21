@@ -6,7 +6,7 @@ It is ready to run in cloudfoundry and requires an associated AWS s3 bucket with
 
 The web app is a single flask page that checks the version of the databases in s3 and compares them to the available versions.  If these are sufficiently out-of-date (by default > 1 version out-of-date) then the healthcheck will report a `FAIL` in pingdom xml monitoring format.
 
-Then there is an update script `run-update.py` which can be run periodically, e.g every hour.
+Run `cvd.py` to check and download the latest database versions. This should be run periodically.
 
 ## Environment variables
 
