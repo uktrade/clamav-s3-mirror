@@ -1,5 +1,4 @@
 import io
-import json
 import logging
 import re
 import socket
@@ -19,7 +18,7 @@ CVDUPDATE_NAMESERVER = env("CVDUPDATE_NAMESERVER", default="current.cvd.clamav.n
 
 USER_AGENT = f"CVDUPDATE/1.0 ({HOSTNAME})"
 
-s3 = boto3.client('s3')
+s3 = boto3.client("s3")
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +97,7 @@ def download_file_obj(url):
     return io.BytesIO(response.content)
 
 
-def get_current_version_string():
+def get_remote_version_string():
     """
     Get the current cvd string from the clamav DNS TXT entry
     """
@@ -114,24 +113,18 @@ def get_current_version_string():
     return versions.split(":")
 
 
-def get_local_database_version(file_name):
-    cvd_header = get_database_header_from_s3(file_name)
+def get_local_database_version(database):
+    """
+    Extract the local version number from the header of a local s3 database object
+    """
+    cvd_header = get_database_header_from_s3(database)
 
     header_fields = cvd_header.decode("utf-8", "ignore").strip().split(":")
 
     return int(header_fields[2])
 
 
-def get_local_database_versions():
-    versions = {}
-
-    for database, config in DATABASES.items():
-        versions[database] = get_local_database_version(database)
-
-    return versions
-
-
-def get_last_local_cdiff_number(database, from_version, to_version):
+def get_last_local_cdiff_number(database):
     """
     Check for the last local diff file for a database
     """
@@ -154,48 +147,38 @@ def get_last_local_cdiff_number(database, from_version, to_version):
         Prefix=prefix,
     )
 
-    items = sorted([
-        extract_version_num(item["Key"]) for item in response.get("Contents", [])
-    ])
+    items = sorted(
+        [extract_version_num(item["Key"]) for item in response.get("Contents", [])]
+    )
 
     return items[-1] if len(items) else 0
 
 
-def check_versions():
-    """Get the local and available version for each database and the the last downloaded cdiff version"""
+def get_version_info(database, version_string):
+    """Get the local, remote and last cdiff number for a specific database"""
 
-    local_versions = get_local_database_versions()
-    available_versions = get_current_version_string()
+    config = DATABASES[database]
 
-    versions = {}
+    version = {
+        "available": int(version_string[config["dns_index"]]),
+        "local": get_local_database_version(database),
+        "last_cdiff": 0,
+    }
 
-    for database, config in DATABASES.items():
-        available_version = int(available_versions[config["dns_index"]])
-        local_version = local_versions[database]
+    version["last_cdiff"] = get_last_local_cdiff_number(database)
 
-        versions[database] = {
-            "available": available_version,
-            "local": local_versions[database],
-            "last_cdiff": 0,
-        }
-
-
-        versions[database]["last_cdiff"] = get_last_local_cdiff_number(
-            database, local_version, available_version
-        )
-
-    return versions
+    return version
 
 
 def healthcheck(max_allowed_database_versions=1, max_allowed_diff_versions=1):
 
-    versions = check_versions()
+    version_string = get_remote_version_string()
 
     status_text = []
     status_ok = True
 
     for database in DATABASES:
-        db_ver = versions[database]
+        db_ver = get_version_info(database, version_string)
 
         status_text.append(
             "{} available version: {}; local version: {}; last cdiff: {}".format(
@@ -233,48 +216,52 @@ def healthcheck(max_allowed_database_versions=1, max_allowed_diff_versions=1):
 
 
 def update():
-    """Get the latest updates"""
+    """Get the latest updates from the clamav server and upload to s3"""
 
-    versions = check_versions()
+    version_string = get_remote_version_string()
 
     for database, config in DATABASES.items():
-        # are cdiffs up to date?
-        if versions[database]["last_cdiff"] < versions[database]["available"]:
-            if versions[database]["available"] - versions[database]["last_cdiff"] > 5:
-                cdiff_start = versions[database]["local"] + 1
-            else:
-                cdiff_start = versions[database]["last_cdiff"] + 1
+        db_ver = get_version_info(database, version_string)
 
-            if cdiff_start <= versions[database]["available"]:
-                for i in range(cdiff_start, versions[database]["available"] + 1):
+        # are cdiffs up to date?
+        if db_ver["last_cdiff"] < db_ver["available"]:
+            if db_ver["available"] - db_ver["last_cdiff"] > 5:
+                cdiff_start = db_ver["local"] + 1
+            else:
+                cdiff_start = db_ver["last_cdiff"] + 1
+
+            if cdiff_start <= db_ver["available"]:
+                for i in range(cdiff_start, db_ver["available"] + 1):
                     prefix = database.replace(".cvd", "")
                     cdiff = f"{prefix}-{i}.cdiff"
                     url = config["url"].replace(database, cdiff)
                     print(f"fetching {url}")
 
                     fd = download_file_obj(url)
-                    s3.upload_fileobj(fd, MIRROR_BUCKET, cdiff, ExtraArgs={'ACL': 'public-read'})
+                    s3.upload_fileobj(
+                        fd, MIRROR_BUCKET, cdiff, ExtraArgs={"ACL": "public-read"}
+                    )
         else:
             print(f"{database} cdiffs are up to date")
 
-        continue
-
         # is the database up to date?
-        if versions[database]["local"] < versions[database]["available"]:
+        if db_ver["local"] < db_ver["available"]:
 
             url = "{}?version={}".format(
                 config["url"],
-                versions[database]["available"],
+                db_ver["available"],
             )
 
             print(f"fetching {url}")
 
             fd = download_file_obj(url)
-            s3.upload_fileobj(fd, MIRROR_BUCKET, database, ExtraArgs={'ACL': 'public-read'})
+            s3.upload_fileobj(
+                fd, MIRROR_BUCKET, database, ExtraArgs={"ACL": "public-read"}
+            )
         else:
             print(f"{database} is up to date")
 
 
 if __name__ == "__main__":
-    # if the file is run directly, download updates 
+    # if the file is run directly, download updates
     update()

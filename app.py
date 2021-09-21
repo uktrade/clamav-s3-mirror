@@ -7,6 +7,12 @@ app = Flask(__name__)
 
 @app.route("/")
 def p1_check():
+    """
+    p1 pingdom xml healthcheck endpoint view.
+
+    If the main database or diff is greater than 1 version out of date, then this endpoint
+    will report a FAIL, which will lead to a pingdom alert.
+    """
 
     status, text = healthcheck()
 
