@@ -36,8 +36,10 @@ jmespath==0.10.0
     # via
     #   boto3
     #   botocore
-markupsafe==2.0.1
-    # via jinja2
+markupsafe==2.1.2
+    # via
+    #   jinja2
+    #   werkzeug
 python-dateutil==2.8.2
     # via botocore
 python-environ==0.4.54
@@ -52,8 +54,10 @@ urllib3==1.26.6
     # via
     #   botocore
     #   requests
-werkzeug==2.0.1
-    # via flask
+werkzeug==2.2.3
+    # via
+    #   -r requirements.in
+    #   flask
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

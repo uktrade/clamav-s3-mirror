@@ -8,3 +8,4 @@ python-environ
 
 # Dependabot fixes
 certifi==2022.12.7
+werkzeug==2.2.3
