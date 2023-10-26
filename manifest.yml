@@ -1,0 +1,6 @@
+---
+applications:
+  - name: clamav-mirror
+    buildpacks:
+      - https://github.com/cloudfoundry/python-buildpack.git
+    stack: cflinuxfs4
