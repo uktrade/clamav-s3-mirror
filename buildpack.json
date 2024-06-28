@@ -1,0 +1,7 @@
+{
+    "buildpacks": [
+      {
+        "paketo-buildpacks": "python"
+      }
+    ]
+  }
