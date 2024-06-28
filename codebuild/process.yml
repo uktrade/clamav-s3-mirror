@@ -1,0 +1,4 @@
+application:
+  name: clamav-s3-mirror
+  process:
+    - web
