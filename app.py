@@ -6,6 +6,11 @@ app = Flask(__name__)
 
 
 @app.route("/")
+def index():
+    return "OK"
+
+
+@app.route("/healthcheck")
 def p1_check():
     """
     p1 pingdom xml healthcheck endpoint view.
