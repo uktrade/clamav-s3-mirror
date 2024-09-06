@@ -1,0 +1,4 @@
+repository: clamav-s3-mirror
+builder:
+  name: paketobuildpacks/builder-jammy-full
+  version: 0.3.338
