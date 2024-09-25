@@ -24,7 +24,7 @@ dnspython==2.1.0
     # via -r requirements.in
 flask==2.0.1
     # via -r requirements.in
-gunicorn==20.1.0
+gunicorn==22.0.0
     # via -r requirements.in
 idna==3.2
     # via requests
@@ -40,6 +40,8 @@ markupsafe==2.1.2
     # via
     #   jinja2
     #   werkzeug
+packaging==24.1
+    # via gunicorn
 python-dateutil==2.8.2
     # via botocore
 python-environ==0.4.54
@@ -58,6 +60,3 @@ werkzeug==2.2.3
     # via
     #   -r requirements.in
     #   flask
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
